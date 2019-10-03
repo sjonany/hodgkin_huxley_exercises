@@ -35,7 +35,7 @@ class HodgkinHuxley():
         """
         External Current
 
-        |  :param t: time
+        |  :param t: time (ms)
         |  :return: step up to 10 uA/cm^2 at t>100
         |           step down to 0 uA/cm^2 at t>200
         |           step up to 35 uA/cm^2 at t>300
