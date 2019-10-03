@@ -2,32 +2,34 @@ import scipy as sp
 import pylab as plt
 from scipy.integrate import odeint
 
+# Original code is from https://hodgkin-huxley-tutorial.readthedocs.io/en/latest/_static/Exercises.html
 class HodgkinHuxley():
     """Full Hodgkin-Huxley Model implemented in Python"""
 
-    C_m  =   1.0
-    """membrane capacitance, in uF/cm^2"""
+    def __init__(self):
+        self.C_m  =   1.0
+        """membrane capacitance, in uF/cm^2"""
 
-    g_Na = 120.0
-    """Sodium (Na) maximum conductances, in mS/cm^2"""
+        self.g_Na = 120.0
+        """Sodium (Na) maximum conductances, in mS/cm^2"""
 
-    g_K  =  36.0
-    """Postassium (K) maximum conductances, in mS/cm^2"""
+        self.g_K  =  36.0
+        """Postassium (K) maximum conductances, in mS/cm^2"""
 
-    g_L  =   0.3
-    """Leak maximum conductances, in mS/cm^2"""
+        self.g_L  =   0.3
+        """Leak maximum conductances, in mS/cm^2"""
 
-    E_Na =  50.0
-    """Sodium (Na) Nernst reversal potentials, in mV"""
+        self.E_Na =  50.0
+        """Sodium (Na) Nernst reversal potentials, in mV"""
 
-    E_K  = -77.0
-    """Postassium (K) Nernst reversal potentials, in mV"""
+        self.E_K  = -77.0
+        """Postassium (K) Nernst reversal potentials, in mV"""
 
-    E_L  = -54.387
-    """Leak Nernst reversal potentials, in mV"""
+        self.E_L  = -54.387
+        """Leak Nernst reversal potentials, in mV"""
 
-    t = sp.arange(0.0, 450.0, 0.01)
-    """ The time to integrate over """
+        self.t = sp.arange(0.0, 450.0, 0.01)
+        """ The time to integrate over """
 
     def alpha_m(self, V):
         """Channel gating kinetics. Functions of membrane voltage"""
@@ -116,12 +118,9 @@ class HodgkinHuxley():
         dndt = self.alpha_n(V)*(1.0-n) - self.beta_n(V)*n
         return dVdt, dmdt, dhdt, dndt
 
-    def Main(self):
-        """
-        Main demo for the Hodgkin Huxley neuron model
-        """
-
-        X = odeint(self.dALLdt, [-65, 0.05, 0.6, 0.32], self.t, args=(self,))
+    def gen_plots(self):
+        init_states = [-65, 0.05, 0.6, 0.32]
+        X = odeint(self.dALLdt, init_states, self.t, args=(self,))
         V = X[:,0]
         m = X[:,1]
         h = X[:,2]
@@ -130,35 +129,30 @@ class HodgkinHuxley():
         ik = self.I_K(V, n)
         il = self.I_L(V)
 
-        plt.figure()
 
-        plt.subplot(4,1,1)
-        plt.title('Hodgkin-Huxley Neuron')
-        plt.plot(self.t, V, 'k')
-        plt.ylabel('V (mV)')
+        fig, ax = plt.subplots(nrows=4, ncols=1, figsize=(10,10))
 
-        plt.subplot(4,1,2)
-        plt.plot(self.t, ina, 'c', label='$I_{Na}$')
-        plt.plot(self.t, ik, 'y', label='$I_{K}$')
-        plt.plot(self.t, il, 'm', label='$I_{L}$')
-        plt.ylabel('Current')
-        plt.legend()
+        ax[0].plot(self.t, V, 'k')
+        ax[0].set_title('Hodgkin-Huxley Neuron')
+        ax[0].set_ylabel('V (mV)')
 
-        plt.subplot(4,1,3)
-        plt.plot(self.t, m, 'r', label='m')
-        plt.plot(self.t, h, 'g', label='h')
-        plt.plot(self.t, n, 'b', label='n')
-        plt.ylabel('Gating Value')
-        plt.legend()
+        ax[1].plot(self.t, ina, 'c', label='$I_{Na}$')
+        ax[1].plot(self.t, ik, 'y', label='$I_{K}$')
+        ax[1].plot(self.t, il, 'm', label='$I_{L}$')
+        ax[1].set_ylabel('Current')
+        ax[1].legend()
 
-        plt.subplot(4,1,4)
+        ax[2].plot(self.t, m, 'r', label='m')
+        ax[2].plot(self.t, h, 'g', label='h')
+        ax[2].plot(self.t, n, 'b', label='n')
+        ax[2].set_ylabel('Gating Value')
+        ax[2].legend()
+
         i_inj_values = [self.I_inj(t) for t in self.t]
-        plt.plot(self.t, i_inj_values, 'k')
-        plt.xlabel('t (ms)')
-        plt.ylabel('$I_{inj}$ ($\\mu{A}/cm^2$)')
-        plt.ylim(-1, 40)
-
-        plt.show()
+        ax[3].plot(self.t, i_inj_values, 'k')
+        ax[3].set_xlabel('t (ms)')
+        ax[3].set_ylabel('$I_{inj}$ ($\\mu{A}/cm^2$)')
+        ax[3].set_ylim(-1, 40)
 
 if __name__ == '__main__':
     runner = HodgkinHuxley()
