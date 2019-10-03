@@ -31,6 +31,17 @@ class HodgkinHuxley():
         self.t = sp.arange(0.0, 450.0, 0.01)
         """ The time to integrate over """
 
+        self.I_inj = lambda t: 10*(t>100) - 10*(t>200) + 35*(t>300) - 35*(t>400)
+        """
+        External Current
+
+        |  :param t: time
+        |  :return: step up to 10 uA/cm^2 at t>100
+        |           step down to 0 uA/cm^2 at t>200
+        |           step up to 35 uA/cm^2 at t>300
+        |           step down to 0 uA/cm^2 at t>400
+        """
+
     def alpha_m(self, V):
         """Channel gating kinetics. Functions of membrane voltage"""
         return 0.1*(V+40.0)/(1.0 - sp.exp(-(V+40.0) / 10.0))
@@ -89,18 +100,6 @@ class HodgkinHuxley():
         """
         return self.g_L * (V - self.E_L)
 
-    def I_inj(self, t):
-        """
-        External Current
-
-        |  :param t: time
-        |  :return: step up to 10 uA/cm^2 at t>100
-        |           step down to 0 uA/cm^2 at t>200
-        |           step up to 35 uA/cm^2 at t>300
-        |           step down to 0 uA/cm^2 at t>400
-        """
-        return 10*(t>100) - 10*(t>200) + 35*(t>300) - 35*(t>400)
-
     @staticmethod
     def dALLdt(X, t, self):
         """
@@ -118,41 +117,58 @@ class HodgkinHuxley():
         dndt = self.alpha_n(V)*(1.0-n) - self.beta_n(V)*n
         return dVdt, dmdt, dhdt, dndt
 
-    def gen_plots(self):
+    @staticmethod
+    def count_peaks(V):
+      peak_count = 0
+      for t in sp.arange(1, len(V)-1, 1):
+        if V[t] > V[t-1] and V[t] > V[t+1]:
+          peak_count += 1
+      return peak_count
+
+    def gen_plots(self, plots_to_include):
         init_states = [-65, 0.05, 0.6, 0.32]
         X = odeint(self.dALLdt, init_states, self.t, args=(self,))
         V = X[:,0]
         m = X[:,1]
         h = X[:,2]
         n = X[:,3]
+        self.V = V
         ina = self.I_Na(V, m, h)
         ik = self.I_K(V, n)
         il = self.I_L(V)
-
-
-        fig, ax = plt.subplots(nrows=4, ncols=1, figsize=(10,10))
-
-        ax[0].plot(self.t, V, 'k')
-        ax[0].set_title('Hodgkin-Huxley Neuron')
-        ax[0].set_ylabel('V (mV)')
-
-        ax[1].plot(self.t, ina, 'c', label='$I_{Na}$')
-        ax[1].plot(self.t, ik, 'y', label='$I_{K}$')
-        ax[1].plot(self.t, il, 'm', label='$I_{L}$')
-        ax[1].set_ylabel('Current')
-        ax[1].legend()
-
-        ax[2].plot(self.t, m, 'r', label='m')
-        ax[2].plot(self.t, h, 'g', label='h')
-        ax[2].plot(self.t, n, 'b', label='n')
-        ax[2].set_ylabel('Gating Value')
-        ax[2].legend()
-
         i_inj_values = [self.I_inj(t) for t in self.t]
-        ax[3].plot(self.t, i_inj_values, 'k')
-        ax[3].set_xlabel('t (ms)')
-        ax[3].set_ylabel('$I_{inj}$ ($\\mu{A}/cm^2$)')
-        ax[3].set_ylim(-1, 40)
+
+        fig, axes = plt.subplots(nrows=len(plots_to_include), ncols=1,
+          figsize=(3 * len(plots_to_include), 3 * len(plots_to_include)))
+
+        for i in range(len(plots_to_include)):
+          plot_command = plots_to_include[i]
+          if len(plots_to_include) == 1:
+            ax = axes
+          else:
+            ax = axes[i]
+
+          if plot_command == "V":
+            ax.plot(self.t, V, 'k')
+            ax.set_title('Hodgkin-Huxley Neuron')
+            ax.set_ylabel('V (mV)')
+          elif plot_command == "I":
+            ax.plot(self.t, ina, 'c', label='$I_{Na}$')
+            ax.plot(self.t, ik, 'y', label='$I_{K}$')
+            ax.plot(self.t, il, 'm', label='$I_{L}$')
+            ax.set_ylabel('Current')
+            ax.legend()
+          elif plot_command == "gate":
+            ax.plot(self.t, m, 'r', label='m')
+            ax.plot(self.t, h, 'g', label='h')
+            ax.plot(self.t, n, 'b', label='n')
+            ax.set_ylabel('Gating Value')
+            ax.legend()
+          else:
+            ax.plot(self.t, i_inj_values, 'k')
+            ax.set_xlabel('t (ms)')
+            ax.set_ylabel('$I_{inj}$ ($\\mu{A}/cm^2$)')
+            ax.set_ylim(-1, 40)
 
 if __name__ == '__main__':
     runner = HodgkinHuxley()
