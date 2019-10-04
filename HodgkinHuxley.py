@@ -139,7 +139,7 @@ class HodgkinHuxley():
         i_inj_values = [self.I_inj(t) for t in self.t]
 
         fig, axes = plt.subplots(nrows=len(plots_to_include), ncols=1,
-          figsize=(3 * len(plots_to_include), 3 * len(plots_to_include)))
+          figsize=(2 * 3 * len(plots_to_include), 3 * len(plots_to_include)))
 
         for i in range(len(plots_to_include)):
           plot_command = plots_to_include[i]
